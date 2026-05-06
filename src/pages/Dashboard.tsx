@@ -69,8 +69,13 @@ export function Dashboard() {
   const habitsForDay = habits.filter(h => h.frequency.includes(dayOfWeek));
   const completedCount = habitsForDay.filter(h => (logs[h.id]?.count || 0) >= h.goalValue).length;
 
-  const currentHour = new Date().getHours();
-  const greeting = currentHour < 12 ? 'Bom dia!' : currentHour < 18 ? 'Boa tarde!' : 'Boa noite!';
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Bom dia!';
+    if (hour >= 12 && hour < 18) return 'Boa tarde!';
+    if (hour >= 18 && hour < 22) return 'Boa noite!';
+    return 'Boa madrugada!';
+  };
 
   const handleUpdateCount = async (habitId: string, delta: number) => {
     const currentUserId = auth.currentUser?.uid || 'guest-user';
@@ -108,7 +113,7 @@ export function Dashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="font-serif text-3xl text-[#222222] mb-1">{greeting}</h2>
+        <h2 className="font-serif text-3xl text-[#222222] mb-1">{getGreeting()}</h2>
         <p className="text-sm text-[#888780] font-light">Acompanhe seus hábitos do dia</p>
       </div>
 
@@ -201,10 +206,13 @@ export function Dashboard() {
         )}
       </section>
 
-      <AddHabitModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
+      <AnimatePresence>
+        {isModalOpen && (
+          <AddHabitModal 
+            onClose={() => setIsModalOpen(false)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
