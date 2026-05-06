@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return true; // TEMPORÁRRIO: Permitindo acesso para modo sem login
+    }
+
+    function isOwner(userId) {
+      return userId == "guest-user" || (request.auth != null && request.auth.uid == userId);
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'createdAt'])
+        && data.email is string && data.email.size() > 0
+        && data.createdAt is timestamp;
+    }
+
+    function isValidHabit(data) {
+      return data.keys().hasAll(['userId', 'name', 'goalValue', 'frequency', 'createdAt'])
+        && (data.userId == "guest-user" || (request.auth != null && data.userId == request.auth.uid))
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.goalValue is int && data.goalValue > 0
+        && data.frequency is list && data.frequency.size() <= 7
+        && data.createdAt is timestamp;
+    }
+
+    function isValidHabitLog(data) {
+      return data.keys().hasAll(['userId', 'habitId', 'date', 'count', 'updatedAt'])
+        && (data.userId == "guest-user" || (request.auth != null && data.userId == request.auth.uid))
+        && isValidId(data.habitId)
+        && data.date is string && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.count is int && data.count >= 0
+        && data.updatedAt is timestamp;
+    }
+
+    // --- Resources ---
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'email']);
+    }
+
+    match /habits/{habitId} {
+      allow list: if isOwner(resource.data.userId);
+      allow get: if isOwner(resource.data.userId);
+      allow create: if isValidHabit(incoming());
+      allow update: if isOwner(existing().userId) && isValidHabit(incoming())
+        && incoming().userId == existing().userId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'goalValue', 'frequency', 'archived', 'color']);
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /habitLogs/{logId} {
+      allow list: if isOwner(resource.data.userId);
+      allow get: if isOwner(resource.data.userId);
+      allow create: if isValidHabitLog(incoming());
+      allow update: if isOwner(existing().userId) && isValidHabitLog(incoming())
+        && incoming().userId == existing().userId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['count', 'updatedAt']);
+      allow delete: if isOwner(existing().userId);
+    }
+  }
+}

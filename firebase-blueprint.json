@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user profile data and settings.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Habit": {
+      "title": "Habit Definition",
+      "description": "Defines a habit, its goal, and frequency.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "goalValue": { "type": "integer" },
+        "frequency": {
+          "type": "array",
+          "items": { "type": "integer" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "archived": { "type": "boolean" },
+        "color": { "type": "string" }
+      },
+      "required": ["userId", "name", "goalValue", "frequency", "createdAt"]
+    },
+    "HabitLog": {
+      "title": "Habit Execution Log",
+      "description": "Records the execution of a habit on a specific date.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "habitId": { "type": "string" },
+        "date": { "type": "string", "description": "YYYY-MM-DD format" },
+        "count": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "habitId", "date", "count", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents."
+    },
+    "/habits/{habitId}": {
+      "schema": "Habit",
+      "description": "Habit definition documents."
+    },
+    "/habitLogs/{logId}": {
+      "schema": "HabitLog",
+      "description": "Habit execution logs."
+    }
+  }
+}
