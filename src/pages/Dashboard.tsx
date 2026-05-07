@@ -37,7 +37,11 @@ export function Dashboard() {
       
       // Filter archived habits in-memory to avoid composite index requirements
       const activeHabits = data.filter(h => !h.archived);
-      setHabits(activeHabits.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      setHabits(activeHabits.sort((a, b) => {
+        const timeA = (a.createdAt as any)?.toMillis?.() || new Date(a.createdAt).getTime();
+        const timeB = (b.createdAt as any)?.toMillis?.() || new Date(b.createdAt).getTime();
+        return timeB - timeA;
+      }));
       setLoading(false);
     }, (err) => {
       console.error("Habit loading error:", err);

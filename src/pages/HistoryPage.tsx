@@ -29,7 +29,12 @@ export function HistoryPage() {
     );
 
     const unsubHabits = onSnapshot(habitsQuery, (snapshot) => {
-      setHabits(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Habit[]);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Habit[];
+      setHabits(data.sort((a, b) => {
+        const timeA = (a.createdAt as any)?.toMillis?.() || new Date(a.createdAt).getTime();
+        const timeB = (b.createdAt as any)?.toMillis?.() || new Date(b.createdAt).getTime();
+        return timeB - timeA;
+      }));
       setLoading(false);
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'habits'));
 
